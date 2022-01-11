@@ -1,8 +1,10 @@
 # CubeSimulator
 
+<img width="350" alt="CubeSimulatorScreenshot" src="https://user-images.githubusercontent.com/89559871/148827504-f5735bfc-3cde-492f-9adb-9cbba3822538.png">
+
 A 3D Rubiks Cube that is controlled via keyboard input. Push the button to scramble cube, then you can manually solve it.
 
-**_Coming soon: AI Solver_**
+**_In Progress: AI Solver_**
 
 ### Requirements to Run:
 - Java 8 (or above)
@@ -19,3 +21,20 @@ A 3D Rubiks Cube that is controlled via keyboard input. Push the button to scram
   
 ### Video Demo:
 https://www.youtube.com/watch?v=XuFMs_T3yFI
+
+
+### Controls:
+- Rotate Cube:
+  - T, Y, G, H, B, N
+- Front Face:
+  - Z, X
+- Back Face:
+  - C, V
+- Top Face:
+  - W, E
+- Bottom Face:
+  - S, D
+- Left Face:
+  - Q, A
+- Right Face:
+  - R, F
