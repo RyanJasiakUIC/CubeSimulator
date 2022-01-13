@@ -50,24 +50,35 @@ public class RubiksAISolver {
 
         ColorAxisDictionary.put("white", 'x');
         ColorNegDictionary.put("white", -1);
-
     }
 
+
+
+
     public void solve(RubiksCube rcr, ConcurrentLinkedQueue<Character> mq, Object l) {
-        System.out.println("noooooooo");
         CubeReference = rcr;
         MovesQueue = mq;
         latch  = l;
-        updateNegsDictionary();
+
         rotateCubeToOriginalOrientation();
-        solveFirstLayer();
-        solveSecondLayer();
+
+        solveGreenFaceLayer();
+        solveMiddlelayer();
         solveThirdLayer();
+
         CubeReference.aiIsDoneSolving();
-        RubiksPiece r = getPieceAtPosition(4);
-        r.SetGray();
-        CubeReference.turnBackToOriginalColorAfterASec(r);
+        // RubiksPiece r = getPieceAtPosition(4);
+        // r.SetGray();
+        // CubeReference.turnBackToOriginalColorAfterASec(r);
     }
+
+
+
+
+
+
+
+
 
     private RubiksPiece getPieceAtPosition(int pos) {
         for (int x = 0; x < 3; x++) {
@@ -82,8 +93,21 @@ public class RubiksAISolver {
     }
 
     private void rotateCubeToOriginalOrientation() {
-        moveColorToTop("red");
-        // moveColorToFront("red");
+        System.out.println("Rotating to Original orientation...");
+        if (CubeReference.getActualZAxis() == 'z') {
+            if (CubeReference.getZNeg() == -1) {
+                rotateCubeOnAxis('y', 90);
+                rotateCubeOnAxis('y', 90);
+            }
+        } else {
+            while (CubeReference.getActualZAxis() != 'z' || CubeReference.getZNeg() != 1) {
+                rotateCubeOnAxis('x', 90);
+                if (CubeReference.getActualZAxis() == 'z' && CubeReference.getZNeg() == 1) break;
+                rotateCubeOnAxis('y', 90);
+            }
+        }
+        while (CubeReference.getActualXAxis() != 'x' || CubeReference.getXNeg() != 1)
+            rotateCubeOnAxis('z', 90);
     }
     
 
@@ -139,18 +163,119 @@ public class RubiksAISolver {
 
 
 
-
-
-
-    private void solveFirstLayer() {
-        // moveColorToTop(starting_color);
-        HashSet<RubiksPiece> corners = getSetOfPieces(starting_color, _TYPE.CORNER);
-        HashSet<RubiksPiece> edges = getSetOfPieces(starting_color, _TYPE.EDGE);
-        // moveColorToFront("orange");
-        
+    private RubiksPiece getPiece(String color, HashSet<RubiksPiece> set_of_pieces) {
+        for (RubiksPiece r : set_of_pieces)
+            if (r.getRevealedColors().contains(color)) return r;
+        return null;
     }
 
-    private void solveSecondLayer() {
+    private boolean isOnBlueFace(RubiksPiece r) {
+        int i = getPositionIndex(r);
+        return (i == 0 ||
+                i == 4 ||
+                i == 5 ||
+                i == 8);
+    }
+
+
+    private void solveGreenFaceLayer() {
+        HashSet<RubiksPiece> corners = getSetOfPieces("green", _TYPE.CORNER);
+        HashSet<RubiksPiece> edges = getSetOfPieces("green", _TYPE.EDGE);
+        RubiksPiece yg_piece = getPiece("yellow", edges);
+        System.out.println("position index: " + getPositionIndex(yg_piece));
+        yg_piece.DumpOrientation();
+        String colors[] = {"yellow", "red", "white", "orange"};
+    
+
+        for (int i = 0; i < 4; i++) {
+            System.out.println(colors[i]);
+            RubiksPiece edge = getPiece(colors[i], edges);
+            moveEdgePieceToBlueFace(edge);
+            moveEdgePieceToSolvedSpot(edge, colors[i]);
+        }
+
+    }
+
+
+    private void moveEdgePieceToBlueFace(RubiksPiece r) {
+        int index = getPositionIndex(r);
+        String face = "";
+        int angle = 90;
+        if (index == 0 || index == 4 || index == 5 || index == 8) {
+            return;
+        } else if (index == 1 || index == 2 || index == 9 || index == 10) {
+            switch (index) {
+                case 1:  face = "left";  angle  = -90; break;
+                case 2:  face = "left";  angle  =  90; break;
+                case 9:  face = "right"; angle  = -90; break;
+                case 10: face = "right"; angle  =  90; break;
+            }
+            rotateFace(face, angle);
+            rotateFace("back", 90);
+            rotateFace(face, angle*-1);
+        } else {
+            switch (index)  {
+                case 3: face = "left"; break;
+                case 6: face = "top"; break;
+                case 7: face = "bottom"; break;
+                case 11: face = "right"; break;
+            }
+            rotateFace(face, 90);
+            rotateFace(face, 90);
+            rotateFace("back", 90);
+            rotateFace(face, -90);
+            rotateFace(face, -90);
+        }
+    }
+
+    private void moveEdgePieceToSolvedSpot(RubiksPiece r, String color) {
+        int position = 0;
+        switch (color) {
+            case "yellow": position = 8; break;
+            case "red":    position = 4; break;
+            case "white":  position = 0; break;
+            case "orange": position = 5; break;
+        }
+        while (getPositionIndex(r) != position) rotateFace("back", 90);
+        String face = "";
+        String helper = "";
+        switch (color) {
+            case "yellow": face = "right";    helper = "top"; break;
+            case "red":    face = "top";     helper = "left"; break;
+            case "white":  face = "left";  helper = "bottom"; break;
+            case "orange": face = "bottom"; helper = "right"; break;
+        }
+        if (r.getActualXAxis() != 'x' || r.getActualYAxis() != 'y')
+            edgePieceAlg2(color);
+        else 
+            edgePieceAlg1(face);
+        r.DumpOrientation();
+    }
+
+    private void edgePieceAlg1(String face) {
+        rotateFace(face, 90);
+        rotateFace(face, 90);
+    } 
+
+    private void edgePieceAlg2(String color) {
+        System.out.println("Alg2");
+        String face = "";
+        String helper = "";
+        int neg = 1, neg2 = 1;
+        switch (color) {
+            case "yellow": face = "right";    helper = "top";  break;
+            case "red":    face = "top";     helper = "left"; neg = -1; break;
+            case "white":  face = "left";  helper = "bottom"; neg = -1; neg2 = -1; break;
+            case "orange": face = "bottom"; helper = "right"; neg2 = -1; break;
+        }
+        rotateFace("back", 90);
+        rotateFace(helper, 90 * neg2);
+        rotateFace(face, 90 * neg);
+        rotateFace(helper, 90 * neg2 * -1);
+    }
+
+
+    private void solveMiddlelayer() {
 
     }
 
@@ -159,32 +284,37 @@ public class RubiksAISolver {
     }
 
 
+    private int getPositionIndex(RubiksPiece r) {
+        for (int x = 0; x < 3; x++) {
+            for (int y = 0; y < 3; y++) {
+                for (int z = 0; z < 3; z++) {
+                    if (CubeReference.getPieceAtCoords(x, y, z) == r) {
+                        // System.out.println("Index: " + PositionIndex[x][y][z]);
+                        return PositionIndex[x][y][z];
+                    }
+                }
+            }
+        }
+        System.out.println("hmmm couldn't find piece");
+        return -1;
+    }
+
+
 
 
     // private String 
 
 
-    
-
-    private int getNegOfAxis(char axis) {
-        switch (axis) {
-            case 'x': return CubeReference.getXNeg();
-            case 'y': return CubeReference.getYNeg();
-            default:  return CubeReference.getZNeg();
-        }
-    }
-
-
 
     private void rotateCubeOnAxis(char axis, int angle) {
         CubeReference.setManualIsRotating(true);
+        // System.out.println("x: " + CubeReference.getActualXAxis() + ", y: " + CubeReference.getActualYAxis() + ", z: " + CubeReference.getActualZAxis());
         switch (axis) {
-            case 'x': CubeReference.RotateCubeOnXAnimated(angle); rotatePositionIndexX(angle); break;
-            case 'y': CubeReference.RotateCubeOnYAnimated(angle); rotatePositionIndexY(angle); break;
-            case 'z': CubeReference.RotateCubeOnZAnimated(angle); rotatePositionIndexZ(angle); break;
+            case 'x': CubeReference.RotateCubeOnXAnimated(angle); break;
+            case 'y': CubeReference.RotateCubeOnYAnimated(angle); break;
+            case 'z': CubeReference.RotateCubeOnZAnimated(angle); break;
         }
         while (CubeReference.manualIsRotating()) System.out.print("");
-        updateNegsDictionary();
     }
 
     private void rotateFace(String face, int angle) {
@@ -207,6 +337,30 @@ public class RubiksAISolver {
         //     case "back":   rotatePositionIndexY(angle); break;
         // }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     private void rotatePositionIndexX(int direction) {
         int temp[][][] = new int[3][3][3];
@@ -291,57 +445,43 @@ public class RubiksAISolver {
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private char getOwnerOfAxis(char c) {
         switch (c) {
             case 'x': return CubeReference.getOwnerOfXAxis();
             case 'y': return CubeReference.getOwnerOfYAxis();
             default:  return CubeReference.getOwnerOfZAxis();
-        }
-    }
-    
-    private void updateNegsDictionary() {
-        System.out.println("Updating negs");
-        char owner = getOwnerOfAxis('y');
-        int neg = getNegOfAxis(owner);
-        ColorNegDictionary.put("green", neg);
-        ColorNegDictionary.put("blue", neg * -1);
-
-        owner = getOwnerOfAxis('z');
-        neg = getNegOfAxis(owner);
-        ColorNegDictionary.put("red", neg);
-        ColorNegDictionary.put("orange", neg * -1);
-
-        owner = getOwnerOfAxis('x');
-        neg = getNegOfAxis(owner);
-        ColorNegDictionary.put("yellow", neg);
-        ColorNegDictionary.put("white", neg * -1);
-    }
-
-    //
-    // Essentially, rotate to make the color's axis
-    // owned by z.
-    //
-    private void moveColorToTop(String color) {
-        char targ_z_axis = ColorAxisDictionary.get(color);
-        while (CubeReference.getActualZAxis() != targ_z_axis || getNegOfAxis('z') != ColorNegDictionary.get(color)) {
-            System.out.println("Actual z: " + CubeReference.getActualZAxis() + ", targ: " + targ_z_axis);
-            System.out.println("getNeg: " + getNegOfAxis('z') + ", ColorNeg: " + ColorNegDictionary.get(color));
-            switch (getOwnerOfAxis(targ_z_axis)) {
-                case 'x': rotateCubeOnAxis('y', 90 * CubeReference.getXNeg()); break;
-                case 'y': rotateCubeOnAxis('x', 90 * CubeReference.getXNeg()); break;
-                case 'z': rotateCubeOnAxis('x', 90 * CubeReference.getXNeg()); break;
-            }
-        }
-        System.out.println("Actual z: " + CubeReference.getActualZAxis() + ", targ: " + targ_z_axis);
-        System.out.println("getNeg: " + getNegOfAxis('z') + ", ColorNeg: " + ColorNegDictionary.get(color));
-    }
-
-    private void moveColorToFront(String color) {
-        char targ_y_axis = ColorAxisDictionary.get(color);
-        int neg = ColorNegDictionary.get(color);
-        while (CubeReference.getActualYAxis() != targ_y_axis || getNegOfAxis('y') != ColorNegDictionary.get(color)) {
-            System.out.println("actual y: " + CubeReference.getActualYAxis() + ", neg: " + neg);
-            rotateCubeOnAxis('z', 90);
         }
     }
 
@@ -359,7 +499,7 @@ public class RubiksAISolver {
         PositionIndex[0][0][1] = 0;
         PositionIndex[0][1][0] = 1;
         PositionIndex[0][1][2] = 2;
-        PositionIndex[0][2][0] = 3;
+        PositionIndex[0][2][1] = 3;
         PositionIndex[1][0][0] = 4;
         PositionIndex[1][0][2] = 5;
         PositionIndex[1][2][0] = 6;

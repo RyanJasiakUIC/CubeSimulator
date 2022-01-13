@@ -114,14 +114,18 @@ public class JavaFXTemplate extends Application {
         scrambleButton = new Button("Scramble it up!");
         
         aiButton.setOnAction(e -> {
-            // if (!Cube.isAISolving()) {
-            //     Cube.setNumFrames(10);
-            //     Cube.aiIsSolving();
-            //     new Thread(() -> {
-            //         RubiksAISolver ai = new RubiksAISolver();
-            //         ai.solve(Cube, MovesQueue, latch);
-            //     }).start();
-            // }
+            if (!Cube.isAISolving()) {
+                Cube.setNumFrames(9);
+                Cube.aiIsSolving();
+                new Thread(() -> {
+                    RubiksAISolver ai = new RubiksAISolver();
+                    ai.solve(Cube, MovesQueue, latch);
+                }).start();
+                new Thread(() -> {
+                    while (Cube.isAISolving()) System.out.print("");
+                    Cube.setNumFrames(6);
+                }).start();
+            }
         });
 
         is_scrambling = false;
@@ -130,7 +134,7 @@ public class JavaFXTemplate extends Application {
                 is_scrambling = true;
                 new Thread(() -> {
                     Cube.setNumFrames(3);
-                    for (int i = 0; i < 70; i++) {
+                    for (int i = 0; i < 30; i++) {
                         MovesQueue.add(MovesArray.get(ThreadLocalRandom.current().nextInt(0, MovesArray.size()-1)));
                     }
                     while (!MovesQueue.isEmpty()) System.out.print("");

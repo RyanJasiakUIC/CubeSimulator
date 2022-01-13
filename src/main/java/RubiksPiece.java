@@ -111,6 +111,27 @@ public class RubiksPiece {
                                    Boxes.get("red"));
     }
 
+
+    public char getActualXAxis() {
+        return axes.get('x');
+    }
+    public char getActualYAxis() {
+        return axes.get('y');
+    }
+    public char getActualZAxis() {
+        return axes.get('z');
+    }
+
+    public int getXNeg() {
+        return negs.get('x');
+    }
+    public int getYNeg() {
+        return negs.get('y');
+    }
+    public int getZNeg() {
+        return negs.get('z');
+    }
+
     public void SetGray() {
         Boxes.forEach((color, box)-> {
             box.setMaterial(grayMaterial);
@@ -121,7 +142,7 @@ public class RubiksPiece {
         t = _t;
     }
 
-    private void DumpOrientation() {
+    public void DumpOrientation() {
         String x_neg = "", y_neg = "", z_neg = "";
         if (negs.get('x') < 1) x_neg = "-";
         if (negs.get('y') < 1) y_neg = "-";

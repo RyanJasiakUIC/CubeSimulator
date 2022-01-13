@@ -557,7 +557,7 @@ public class RubiksCube {
 
 
     private void RotateAxesOfPieces1(int ang, int side) {
-        o("*********************************");
+        // o("*********************************");
         for (int y = 0; y < 3; y++) {
             for (int z = 0; z < 3; z++) {
                 pieces[side][y][z].UpdateAxesFromRotation(ang, 'x');
@@ -565,7 +565,7 @@ public class RubiksCube {
         }
     }
     private void RotateAxesOfPieces2(int ang, int side) {
-        o("*********************************");
+        // o("*********************************");
         for (int x = 0; x < 3; x++) {
             for (int z = 0; z < 3; z++) {
                 pieces[x][side][z].UpdateAxesFromRotation(ang, 'y');
@@ -573,7 +573,7 @@ public class RubiksCube {
         }
     }
     private void RotateAxesOfPieces3(int ang, int side) {
-        o("*********************************");
+        // o("*********************************");
         for (int x = 0; x < 3; x++) {
             for (int y = 0; y < 3; y++) {
                 pieces[x][y][side].UpdateAxesFromRotation(ang, 'z');
